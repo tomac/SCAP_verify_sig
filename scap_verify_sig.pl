@@ -6,22 +6,14 @@
 # I've just added some minor changes to support other SCAP files that could be
 # bigger or smaller
 #
-#typedef struct {
-#  EFI_GUID CapsuleGuid;
-#  UINT32   HeaderSize;
-#  UINT32   Flags;
-#  UINT32   CapsuleImageSize;
-#} EFI_CAPSULE_HEADER;
-#
 # Important information:
 # - The first 16 bytes represent the GUID 3b6686bd-0d76-4030-b70eb5519e2fc5a0
 #   (EFI_CAPSULE_HEADER)
 # - Header size is at offset 0x10
 # - Total SCAP file size is at offset 0x18
 # - Total Firmware Volume size is at offset 0x70
-# - Signature (_FVH) is at offset 0x78
 # - The last 0x220 bytes include:
-#   - GUID aa7717414-c616-4977-9420844712a735bf (EFI_CERT_TYPE_RSA2048_SHA256_GUID)
+#   - GUID a7717414-c616-4977-9420844712a735bf (EFI_CERT_TYPE_RSA2048_SHA256_GUID)
 #   - 2048 RSA Public key
 #   - SHA256 signature
 #
@@ -29,16 +21,22 @@ use strict;
 use Crypt::OpenSSL::RSA;
 use Crypt::OpenSSL::Bignum;
 
+# EFI_CAPSULE_HEADER
+my $capsule_guid = qq{\xbd\x86\x66\x3b\x76\x0d\x30\x40\xb7\x0e\xb5\x51\x9e\x2f\xc5\xa0};
 # EFI_CERT_TYPE_RSA2048_SHA256_GUID
-my $guid = qq{\x14\x74\x71\xA7\x16\xC6\x77\x49\x94\x20\x84\x47\x12\xA7\x35\xBF};
+my $cert_guid = qq{\x14\x74\x71\xA7\x16\xC6\x77\x49\x94\x20\x84\x47\x12\xA7\x35\xBF};
 
 my $scap = do { undef $/ ; <> };
+
+print "Not a valid SCAP file\n" and exit if index($scap, $capsule_guid) == -1;
+
 my $volume_size = substr($scap, 0x70, 0x8);
 printf("Volume size: 0x%x\n", unpack("VH8", $volume_size));
 
 # Find EFI_CERT_TYPE_RSA2048_SHA256_GUID
-my $start = index($scap, $guid);
-printf("position: 0x%x\n", $start);
+my $start = index($scap, $cert_guid);
+print "Not EFI_CERT_TYPE_RSA2048_SHA256_GUID found\n" and exit if $start == -1;
+printf("Key offset: 0x%x\n", $start);
 
 my $fvh = substr($scap, 0x50, unpack("VH8", $volume_size));
 my $pub = reverse substr($scap, $start + 0x10, 0x100); # Switch from little- to big-endian
