@@ -6,12 +6,20 @@
 # I've just added some minor changes to support other SCAP files that could be
 # bigger or smaller
 #
+#typedef struct {
+#  EFI_GUID CapsuleGuid;
+#  UINT32   HeaderSize;
+#  UINT32   Flags;
+#  UINT32   CapsuleImageSize;
+#} EFI_CAPSULE_HEADER;
+#
 # Important information:
 # - The first 16 bytes represent the GUID 3b6686bd-0d76-4030-b70eb5519e2fc5a0
 #   (EFI_CAPSULE_HEADER)
 # - Header size is at offset 0x10
-# - Total SCAP file size is at offset 0x50
+# - Total SCAP file size is at offset 0x18
 # - Total Firmware Volume size is at offset 0x70
+# - Signature (_FVH) is at offset 0x78
 # - The last 0x220 bytes include:
 #   - GUID aa7717414-c616-4977-9420844712a735bf (EFI_CERT_TYPE_RSA2048_SHA256_GUID)
 #   - 2048 RSA Public key
